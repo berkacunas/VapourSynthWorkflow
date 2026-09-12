@@ -29,17 +29,6 @@ class DemuxConfig:
                    output_path=Path(args.output) if getattr(args, 'output', None) else None,
                    audio_track_id=getattr(args, 'audio', None), 
                    video_track_id=getattr(args, 'video', None))
-        
-def _extract_track(decoder: str, input_file: Path, track_id: int, output_file: Path):
-    
-    cmd = ["mp4box", "-raw", f"{track_id}:output={str(output_file)}", str(input_file)]
-    
-    logger.info(f"[*] Executing demux: Extracting track {input_file} with {decoder}...")
-    logger.info(f"[*] Executing: {' '.join(cmd)}")
-
-    subprocess.run(cmd, check=True)
-
-    logger.info("[+] Audio extraction completed.")
     
 def _extract_audio(input_file: Path, output_file: Path, track_id: int) -> None:
 
@@ -51,23 +40,25 @@ def _extract_audio(input_file: Path, output_file: Path, track_id: int) -> None:
             
     match ext:
         case "mp4":
-            # mp4box syntax: 
-            # $ mp4box -raw <track_id>:output=<output_file> <input_file>
             decoder = "mp4box"
-            try:
-                _extract_track(decoder, input_file, track_id, output_file)
-            except subprocess.CalledProcessError as e:
-                logger.info(f"[-] An error occured during demuxing audio: {e}")
+            # mp4box syntax: $ mp4box -raw <track_id>:output=<output_file> <input_file>
+            cmd = [decoder, "-raw", f"{track_id}:output={str(output_file)}", str(input_file)]
         case "mkv":
-            # eac3to syntax: 
-            # $ eac3to <input_file> <track_id>: <output_file>
             decoder = "eac3to"
-            try:
-                _extract_track("eac3to", input_file, track_id, output_file)
-            except subprocess.CalledProcessError as e:
-                logger.info(f"[-] An error occured during demuxing audio: {e}")
+            # eac3to syntax: $ eac3to <input_file> <track_id>: <output_file>
+            cmd = [decoder, str(input_file), track_id, str(output_file)]
         case _:
             raise ValueError(f"Unsupported container format: {ext}")
+        
+    try:
+        logger.info(f"[*] Executing demux: Extracting track {input_file} with {decoder}...")
+        logger.info(f"[*] Executing: {' '.join(cmd)}")
+
+        subprocess.run(cmd, check=True)
+        logger.info("[+] Audio extraction completed.")
+        
+    except subprocess.CalledProcessError as e:
+        logger.info(f"[-] An error occured during demuxing audio: {e}")
 
 def _extract_video(input_file: Path, output_file: Path, track_id: int) -> None:
     
