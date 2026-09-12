@@ -18,7 +18,7 @@ import argparse
 class DemuxConfig:
     
     input_file: Path
-    output_path: Optional[Path] = None
+    output_path: Path | None = None
     audio_track_id: int | None = None
     video_track_id: int | None = None
 
@@ -36,7 +36,9 @@ def _extract_track(decoder: str, input_file: Path, track_id: int, output_file: P
     
     logger.info(f"[*] Executing demux: Extracting track {input_file} with {decoder}...")
     logger.info(f"[*] Executing: {' '.join(cmd)}")
+
     subprocess.run(cmd, check=True)
+
     logger.info("[+] Audio extraction completed.")
     
 def _extract_audio(input_file: Path, output_file: Path, track_id: int) -> None:
@@ -72,7 +74,6 @@ def _extract_video(input_file: Path, output_file: Path, track_id: int) -> None:
     valid_exts = ['.h264', '.264', '.hevc', '.h265']
     
     if not output_file:
-        # Defaulting to .h264 if user provides no output name
         output_file = input_file.with_suffix('.h264')
         
     original_suffix = output_file.suffix.lower()
