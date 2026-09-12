@@ -5,7 +5,7 @@ from encoding import run_encode_pipeline, run_demux
 def main():
 
     # Master Parser Initialization
-    parser = argparse.ArgumentParser(description="Low-Level Encode Orchestrator")
+    parser = argparse.ArgumentParser(description="")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
     subparsers.required = True  # Ensures the script doesn't run without a valid sub-command
 
