@@ -15,7 +15,7 @@ from typing import Optional
 import argparse
 
 @dataclass
-class DemuxConfig:
+class DemuxOptions:
     
     input_file: Path
     output_path: Path | None = None
@@ -23,7 +23,7 @@ class DemuxConfig:
     video_track_id: int | None = None
 
     @classmethod
-    def from_args(cls, args: argparse.Namespace) -> DemuxConfig:
+    def from_args(cls, args: argparse.Namespace) -> DemuxOptions:
         
         return cls(input_file=Path(args.input), 
                    output_path=Path(args.output) if getattr(args, 'output', None) else None,
@@ -60,19 +60,37 @@ def _extract_audio(input_file: Path, output_file: Path, track_id: int) -> None:
     except subprocess.CalledProcessError as e:
         logger.info(f"[-] An error occured during demuxing audio: {e}")
 
-def _extract_video(input_file: Path, output_file: Path, track_id: int) -> None:
-    
-    valid_exts = ['.h264', '.264', '.hevc', '.h265']
-    
-    if not output_file:
+def _extract_video(input_file: Path, output_file: Path | None, track_id: int) -> None:
+    if output_file is None:
         output_file = input_file.with_suffix('.h264')
-        
-    original_suffix = output_file.suffix.lower()
-    
-    if original_suffix not in valid_exts:
-        logger.warning(f"Output extension '{original_suffix}' is unusual for a raw video stream. Proceeding anyway, but verify your codec.")
-        
-    _extract_track(input_file, track_id, output_file)
+
+    valid_extensions = {'.h264', '.264', '.hevc', '.h265'}
+    output_suffix = output_file.suffix.lower()
+    if output_suffix not in valid_extensions:
+        logger.warning(
+            f"Output extension '{output_suffix}' is unusual for a raw video stream. "
+            "Proceeding anyway, but verify your codec."
+        )
+
+    match input_file.suffix.lower():
+        case '.mp4':
+            decoder = 'mp4box'
+            command = [
+                decoder,
+                '-raw',
+                f'{track_id}:output={output_file}',
+                str(input_file),
+            ]
+        case '.mkv':
+            decoder = 'eac3to'
+            command = [decoder, str(input_file), f'{track_id}:', str(output_file)]
+        case suffix:
+            raise ValueError(f'Unsupported container format: {suffix}')
+
+    logger.info(f"[*] Extracting video track {track_id} with {decoder}...")
+    logger.info(f"[*] Executing: {' '.join(command)}")
+    subprocess.run(command, check=True)
+    logger.info('[+] Video extraction completed.')
     
     
 def generate_vapoursynth(input_file: Path, vpy_file: Path):
