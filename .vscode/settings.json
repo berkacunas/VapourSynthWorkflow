@@ -1,4 +1,11 @@
 {
+    "explorer.autoReveal": false,
+    "debug.openDebug": "neverOpen",
+    "github.copilot.enable": {
+        "*": false
+    },
+    "git.autofetch": true,
+    "git.autofetchPeriod": 180,
     "python.terminal.activateEnvironment": true,
     "python.analysis.typeCheckingMode": "basic",
     "python.analysis.autoImportCompletions": true,
