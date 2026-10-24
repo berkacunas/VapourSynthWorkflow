@@ -1,9 +1,15 @@
 .git/
+
 .venv/
 .env
+
 __pycache__/
+*.egg-info
+
 .idea/
+
 archive/
 projects/
 
-*.egg-info
+*.mkv
+*.mp4

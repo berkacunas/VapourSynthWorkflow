@@ -4,15 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "VapourSynthWorkflow"
-version = "0.1.0"
+version = "1.0.0"
 description = ""
 authors = [
   { name="Berk Acunas", email="info@deponessoft.com" },
 ]
 dependencies = [
   "vapoursynth",
+  "vsrepo",
 ]
 requires-python = ">=3.10"
-
-[project.scripts]
-VapourSynthWorkflow = "VapourSynthWorkflow.main:main"
