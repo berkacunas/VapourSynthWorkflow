@@ -10,6 +10,7 @@ __pycache__/
 
 archive/
 projects/
+samples/
 
 *.mkv
 *.mp4
