@@ -12,5 +12,6 @@ authors = [
 dependencies = [
   "vapoursynth",
   "vsrepo",
+  "vsutil",
 ]
 requires-python = ">=3.10"

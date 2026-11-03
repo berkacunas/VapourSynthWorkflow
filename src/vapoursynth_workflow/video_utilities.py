@@ -15,7 +15,7 @@ def get_fps(source: str) -> float:
     
     return fps
 
-def load_fast_sample(source: str, samplefile: str, start_time: str | int = "00:20:00", duration: str | None = None, num_frames: int | None = None) -> vs.VideoNode:
+def create_fast_sample(source: str, samplefile: str, start_time: str | int = "00:20:00", duration: str | None = None, num_frames: int | None = None) -> str:
     
     samplefile_path = Path(samplefile)
     sample_dir = samplefile_path.resolve().parent
@@ -24,15 +24,15 @@ def load_fast_sample(source: str, samplefile: str, start_time: str | int = "00:2
     sample_dir.mkdir(parents=True, exist_ok=True)
 
     if num_frames is not None:
-        cmd = ["ffmpeg", "-y", "-ss", str(start_time), "-i", source, "-frames:v", str(num_frames), "-c:v", "copy", "-an", "-sn", samplefile]
+        cmd = ["ffmpeg", "-y", "-ss", str(start_time), "-i", source, "-frames:v", str(num_frames), "-c:v", "copy", "-sn", samplefile]
     else:
         duration_val = duration if duration else "00:00:10"
-        cmd = ["ffmpeg", "-y", "-ss", str(start_time), "-i", source, "-t", duration_val, "-c:v", "copy", "-an", "-sn", samplefile]
+        cmd = ["ffmpeg", "-y", "-ss", str(start_time), "-i", source, "-t", duration_val, "-c:v", "copy", "-sn", samplefile]
         
     subprocess.run(cmd, check=True)
+    
+    return str(samplefile)
         
-    return core.lsmas.LWLibavSource(source=samplefile, format="YUV420P10")
-
 def cut_clip(clip: vs.VideoNode, start_sec: int, num_frames: int = 1) -> vs.VideoNode:
     # Extract 1 frame at the 1200th second (20th minute) for a quick visual check
     # clip = extract_sample(clip, start_sec=1200, num_frames=1)
@@ -72,3 +72,47 @@ def ffmpeg_stderr(source: str) -> str:
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     return result.stderr
+
+def print_node_info(vnode: vs.VideoNode):
+
+    text = f"Format: {vnode.format} | Width: {vnode.width} | Height: {vnode.height} | Num_of_Frames: {vnode.num_frames} | FPS: {vnode.fps.numerator} | "
+
+def get_clip_frame(vnode: vs.VideoNode, index: int) -> vs.VideoFrame:
+    
+    return vnode.get_frame(index)
+
+def iterate_frames(vnode: vs.VideoNode):
+    '''
+    prefetch argument defines how many frames are rendered concurrently. 
+    Is only there for debugging purposes and should never need to be changed. 
+    
+    backlog argument defines how many unconsumed frames (including those that 
+    did not finish rendering yet) vapoursynth buffers at most before it stops 
+    rendering additional frames. This argument is there to limit the memory 
+    this function uses storing frames.
+    '''
+    yield from vnode.frames(prefetch=1, backlog=1)
+
+
+def save_crop_as_image(cropped_clip: vs.VideoNode, frame_index: int, output_path: str):
+
+    rgb_clip = cropped_clip.resize.Bicubic(format=vs.RGB24, matrix_in=1)
+    writer = core.imwri.Write(rgb_clip, imgformat='PNG', filename=output_path, overwrite=True)
+    return writer.get_frame(frame_index)
+
+# Usage:
+# save_crop_as_image(my_video_node, 120, 'C:/path/to/frame_120.png')
+
+# 3. Handle color matrix and convert to RGB24 for IMWRI
+# matrix = clip.get_frame(0).props.get('_Matrix', None)
+# if matrix in [None, 2, 3]:
+#     matrix = 1
+# clip = core.resize.Bicubic(clip, format=vs.RGB24, matrix_in=matrix)
+
+# # 4. Set up IMWRI writer to export PNG
+# output_pattern = r'C:/path/to/output_frame_%06d.png'
+# writer = core.imwri.Write(clip, imgformat='PNG', filename=output_pattern, overwrite=True)
+
+# # 5. Request a specific frame number (e.g., frame 150)
+# target_frame_number = 150
+# writer.get_frame(target_frame_number)
