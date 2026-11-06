@@ -31,11 +31,18 @@ def get_cropping_values(sourcefile: Path) -> Tuple[int, int, int, int, int, int]
 
     return left, top, right, bottom, w, h
 
-def process_video_with_nvencc(nvencc_path: Path, vapoursynth_file: Path, output_file: Path, target_width: int = 1920, target_height: int = 1080, left: int = 0, top: int = 0, right: int = 0, bottom: int = 0):
+def process_video_with_nvencc(nvencc_path: Path, vapoursynth_file: Path, output_file: Path, target_width: int = 1920, target_height: int = 1080, left: int = 0, top: int = 0, right: int = 0, bottom: int = 0, start_frame: int = 0, end_frame: int = 0):
     
     print("\n[2/3] NVEncC hardware encoding via VapourSynth is starting...")
     
-    vspipe_cmd = ["vspipe", "-c", "y4m", str(vapoursynth_file), "-"]
+    vspipe_cmd = ["vspipe", "-c", "y4m"]
+    
+    if start_frame > 0:
+        vspipe_cmd.extend(["-a", f"start_frame={start_frame}"])
+    if end_frame >  start_frame:
+        vspipe_cmd.extend(["-a", f"end_frame={end_frame}"])
+        
+    vspipe_cmd.extend([str(vapoursynth_file), "-"])
 
     nvencc_pipe_cmd = [ str(nvencc_path), "--y4m", "-i", "-", 
                     "-c", "hevc", 

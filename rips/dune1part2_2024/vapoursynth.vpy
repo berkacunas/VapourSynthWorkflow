@@ -27,18 +27,31 @@ samplefile = create_fast_sample(source=sourcefile, samplefile=samplefile, start_
 # 1. Load source
 clip = core.lsmas.LWLibavSource(source=samplefile, format="YUV420P10")
 
-# 2. Cropping
+# 2 . Trim
+start_frame = globals().get('start_frame')
+end_frame = globals().get('end_frame')
+
+if start_frame is not None or end_frame is not None:
+    first_val = int(start_frame) if start_frame is not None else 0
+    if end_frame is not None:
+        clip = core.std.Trim(clip, first=first_val, last=int(end_frame))
+    else:
+        clip = core.std.Trim(clip, first=first_val)
+
+
+
+# 3. Cropping
 # VapourSynth cropping is heavily CPU-bound. If you are piping to a hardware 
 # encoder (e.g., NVEncC, QSVEnc), disable this line and use the encoder's native 
 # cropping parameters (like --crop) for better thermal stability and speed.
 # w, h, x, y = parse_crop_values(ffmpeg_stderr(sourcefile))
 # clip = core.std.Crop(clip, left=x, right=clip.width - w - x, top=y, bottom=clip.height - h - y)
 
-# 3. Clean Grains
+# 4. Clean Grains
 # clip = haf.SMDegrain(clip, tr=2, thSAD=150, RefineMotion=True)
 
 #############################################################
-# 4. AI Denoise Filter Example
+# 5. AI Denoise Filter Example
 # vsrepo install mlrt
 
 # Convert to RGB-Float for AI access
@@ -56,7 +69,7 @@ clip = core.lsmas.LWLibavSource(source=samplefile, format="YUV420P10")
 # clip = core.resize.Bicubic(clip_rgb, format=vs.YUV420P10, matrix=vs.MatrixCoefficients.MATRIX_BT2020_NCL)
 #############################################################
 
-# 4. Resize
+# 6. Resize
 target_width = 1920
 target_height = ((int((clip.height * target_width) / clip.width)) // 2) * 2
 
@@ -65,11 +78,11 @@ clip = core.resize.Bicubic(clip, width=target_width, height=target_height,
                            primaries_in=vs.ColorPrimaries.PRIMARIES_BT2020, matrix=vs.MatrixCoefficients.MATRIX_BT709,                
                            transfer=vs.TransferCharacteristics.TRANSFER_BT709, primaries=vs.ColorPrimaries.PRIMARIES_BT709)
 
-# 5. Debanding
+# 7. Debanding
 # vsrepo install neo_f3kdb
 # clip = core.neo_f3kdb.Deband(clip, range=15, y=64, cb=64, cr=64, grainy=0, grainc=0, output_depth=10)
 
-# 5. Color Space Tagging / Metadata Flagging
+# 8. Color Space Tagging / Metadata Flagging
 clip = core.std.SetFrameProps(clip, _Matrix=vs.MatrixCoefficients.MATRIX_BT709, _Transfer=vs.TransferCharacteristics.TRANSFER_BT709, 
                               _Primaries=vs.ColorPrimaries.PRIMARIES_BT709)
 
