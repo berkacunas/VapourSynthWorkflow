@@ -1,18 +1,13 @@
 from datetime import datetime
-from pathlib import Path
 
 import vapoursynth as vs
 import havsfunc as haf
 core = vs.core
 core.num_threads = 3
 
-from vapoursynth_workflow.video_utilities import parse_crop_values, ffmpeg_stderr, create_fast_sample, save_crop_as_image
-
-sourcefile = r"D:\BT\Completed\Dune.Part.Two.2024.UHD.BluRay.2160p.TrueHD.Atmos.7.1.DV.HEVC.REMUX-FraMeSToR.mkv"
-samplefile = r"E:\HOME\GitHub\berk\VapourSynthWorkflow\rips\dune1part2_2024\samples\sample_file.mkv"
+from vapoursynth_workflow.video_utilities import save_crop_as_image
 
 neo_f3kdb_path = r"E:\HOME\GitHub\berk\VapourSynthWorkflow\plugins\neo-f3kdb.dll"
-
 core.std.LoadPlugin(path=neo_f3kdb_path)
 
 # How to use vsrepo:
@@ -22,10 +17,12 @@ core.std.LoadPlugin(path=neo_f3kdb_path)
 # $ vsrepo install havsfunc && vsrepo check havsfunc
 # $ vsrepo install mlrt  => AI-filters
 
-samplefile = create_fast_sample(source=sourcefile, samplefile=samplefile, start_time=1500, num_frames=150)
+# samplefile = create_fast_sample(source=sourcefile, samplefile=samplefile, start_time=1500, num_frames=150)
+timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 # 1. Load source
-clip = core.lsmas.LWLibavSource(source=samplefile, format="YUV420P10")
+sourcefile = str(globals().get("sourcefile")) 
+clip = core.lsmas.LWLibavSource(source=sourcefile, format="YUV420P10")
 
 # 2 . Trim
 start_frame = globals().get('start_frame')
@@ -37,8 +34,6 @@ if start_frame is not None or end_frame is not None:
         clip = core.std.Trim(clip, first=first_val, last=int(end_frame))
     else:
         clip = core.std.Trim(clip, first=first_val)
-
-
 
 # 3. Cropping
 # VapourSynth cropping is heavily CPU-bound. If you are piping to a hardware 
@@ -86,7 +81,7 @@ clip = core.resize.Bicubic(clip, width=target_width, height=target_height,
 clip = core.std.SetFrameProps(clip, _Matrix=vs.MatrixCoefficients.MATRIX_BT709, _Transfer=vs.TransferCharacteristics.TRANSFER_BT709, 
                               _Primaries=vs.ColorPrimaries.PRIMARIES_BT709)
 
-frame_index = 50
-save_crop_as_image(clip, frame_index, fr"E:\HOME\GitHub\berk\VapourSynthWorkflow\rips\dune1part2_2024\samples\crop_image_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_frame{frame_index}.png")
+frame_index = clip.num_frames // 2
+save_crop_as_image(clip, frame_index, fr"E:\HOME\GitHub\berk\VapourSynthWorkflow\rips\dune1part2_2024\samples\crop_image_{timestamp}_frame{frame_index}.png")
 
 clip.set_output()

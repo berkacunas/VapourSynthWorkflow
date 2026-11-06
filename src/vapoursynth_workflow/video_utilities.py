@@ -44,25 +44,13 @@ def cut_clip(clip: vs.VideoNode, start_sec: int, num_frames: int = 1) -> vs.Vide
 
 def parse_crop_values(ffmpeg_output: str) -> tuple[int, int, int, int]:
     
-    crop_values = [line.split("crop=")[-1].split(" ")[0] for line in ffmpeg_output.splitlines() if "crop=" in line]
+    crop_values = [line.split("crop=")[-1].split(" ")[0] 
+                   for line in ffmpeg_output.splitlines() 
+                   if "crop=" in line]
+    
     most_common_crop = Counter(crop_values).most_common(1)[0][0]
     
     w, h, x, y = [int(val) for val in most_common_crop.strip().split(":")]
-    return w, h, x, y
-
-def parse_crop_values_deprecated(ffmpeg_output: str) -> tuple[int, int, int, int]:
-    
-    target = "crop="
-    start_idx = ffmpeg_output.rfind(target)
-    
-    if start_idx == -1:
-        raise ValueError("Cannot find 'crop=' in ffmpeg output. Please scan more frames.")
-        
-    start_idx += len(target)
-    end_idx = ffmpeg_output.find("\n", start_idx)
-    crop_str = ffmpeg_output[start_idx:end_idx] if end_idx != -1 else ffmpeg_output[start_idx:]
-    
-    w, h, x, y = [int(val) for val in crop_str.strip().split(":")]
     
     return w, h, x, y
 
