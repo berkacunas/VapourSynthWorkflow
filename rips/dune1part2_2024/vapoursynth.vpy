@@ -3,7 +3,7 @@ from datetime import datetime
 import vapoursynth as vs
 import havsfunc as haf
 core = vs.core
-core.num_threads = 3
+core.num_threads = 2
 
 from vapoursynth_workflow.video_utilities import save_crop_as_image
 
@@ -21,7 +21,11 @@ core.std.LoadPlugin(path=neo_f3kdb_path)
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 # 1. Load source
-sourcefile = str(globals().get("sourcefile")) 
+sourcefile = globals().get("sourcefile")
+if sourcefile is None:
+    raise ValueError("sourcefile argument was not passed to VapourSynth!")
+
+# sourcefile = r"E:\HOME\GitHub\berk\VapourSynthWorkflow\rips\dune1part2_2024\samples\sample_file.mkv"
 clip = core.lsmas.LWLibavSource(source=sourcefile, format="YUV420P10")
 
 # 2 . Trim
