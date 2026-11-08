@@ -104,6 +104,12 @@ def process_video_with_nvencc(nvencc_path: Path, vapoursynth_file: Path, sourcef
                     ]
 
     p_vspipe = subprocess.Popen(vspipe_cmd, stdout=subprocess.PIPE, text=False)
+    
+    # Lock the vspipe process to only cores 0 and 1 (CPU 0 and CPU 1)
+    # Causing thermal hotspots. Don't add.
+    # vspipe_process = psutil.Process(p_vspipe.pid)
+    # vspipe_process.cpu_affinity([0, 2])
+    
     p_nvencc = subprocess.Popen(nvencc_pipe_cmd, stdin=p_vspipe.stdout, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 
     stop_event = threading.Event()
@@ -170,6 +176,24 @@ def get_cpu_temperature(node: dict) -> float:
             
     return 0.0
 
+def get_cpu_clock(node: dict) -> float:
+    
+    text = node.get("Text", "")
+    value = node.get("Value", "")
+    
+    if "CPU Core" in text and "MHz" in value:
+        # OHM formats like "2,666.0 MHz" -> Clean it up to "2666.0"
+        clean_value = value.replace("MHz", "").strip().replace(",", "")
+        return float(clean_value)
+    
+    # Recursively search in children nodes
+    for child in node.get("Children", []):
+        result = get_cpu_clock(child)
+        if result > 0: 
+            return result
+            
+    return 0.0
+
 def hardware_monitor(p_vspipe: subprocess.Popen, p_nvencc: subprocess.Popen, stop_event: threading.Event):
     
     while not stop_event.is_set():
@@ -178,8 +202,10 @@ def hardware_monitor(p_vspipe: subprocess.Popen, p_nvencc: subprocess.Popen, sto
                 response = urllib.request.urlopen("http://localhost:8085/data.json", timeout=1)
                 ohm_data = json.loads(response.read().decode('utf-8'))
                 cpu_temp = get_cpu_temperature(ohm_data)
+                cpu_clock = get_cpu_clock(ohm_data)
             except Exception:
                 cpu_temp = 0
+                cpu_clock = 0
                 
             gpu_temp_str = subprocess.getoutput("nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader")
             gpu_temp = int(gpu_temp_str.strip()) if gpu_temp_str.strip().isdigit() else 0
@@ -187,8 +213,15 @@ def hardware_monitor(p_vspipe: subprocess.Popen, p_nvencc: subprocess.Popen, sto
             cpu_load = psutil.cpu_percent(interval=1)
             ram_load = psutil.virtual_memory().percent
             
-            if cpu_temp > 85 or gpu_temp >= 85 or cpu_load >= 95 or ram_load >= 90:
-                print(f"\n[WARNING] HARDWARE RISK DETECTED! Operation is being halted. (GPU: {gpu_temp}°C, CPU: %{cpu_load}, RAM: %{ram_load})")
+            # Base risk conditions
+            hardware_risk = cpu_temp >= 92 or cpu_load >= 95 or gpu_temp >= 85 or ram_load >= 90
+            
+            # Thermal Throttling condition: High temp + drastic clock drop (under 1500 MHz)
+            throttling_risk = (cpu_temp >= 88) and (0 < cpu_clock < 1500)
+            
+            if hardware_risk or throttling_risk:
+                print(f"\n[WARNING] HARDWARE RISK DETECTED! Operation is being halted.")
+                print(f"CPU: {cpu_temp}°C, CPU: %{cpu_load}, GPU: {gpu_temp}°C, RAM: %{ram_load}")
                 winsound.Beep(1000, 2000)  # 2 sec alarm in 1000Hz frequency
                 
                 # terminate Popen processes immediately if they are still running.

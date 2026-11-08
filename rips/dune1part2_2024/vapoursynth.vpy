@@ -2,13 +2,8 @@ from datetime import datetime
 
 import vapoursynth as vs
 import havsfunc as haf
-core = vs.core
-core.num_threads = 2
 
 from vapoursynth_workflow.video_utilities import save_crop_as_image
-
-neo_f3kdb_path = r"E:\HOME\GitHub\berk\VapourSynthWorkflow\plugins\neo-f3kdb.dll"
-core.std.LoadPlugin(path=neo_f3kdb_path)
 
 # How to use vsrepo:
 # $ vsrepo update
@@ -17,8 +12,14 @@ core.std.LoadPlugin(path=neo_f3kdb_path)
 # $ vsrepo install havsfunc && vsrepo check havsfunc
 # $ vsrepo install mlrt  => AI-filters
 
-# samplefile = create_fast_sample(source=sourcefile, samplefile=samplefile, start_time=1500, num_frames=150)
+neo_f3kdb_path = r"E:\HOME\GitHub\berk\VapourSynthWorkflow\plugins\neo-f3kdb.dll"
+
+num_of_threads = 2
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+core = vs.core
+core.num_threads = num_of_threads
+core.std.LoadPlugin(path=neo_f3kdb_path)
 
 # 1. Load source
 sourcefile = globals().get("sourcefile")
@@ -26,7 +27,8 @@ if sourcefile is None:
     raise ValueError("sourcefile argument was not passed to VapourSynth!")
 
 # sourcefile = r"E:\HOME\GitHub\berk\VapourSynthWorkflow\rips\dune1part2_2024\samples\sample_file.mkv"
-clip = core.lsmas.LWLibavSource(source=sourcefile, format="YUV420P10")
+# samplefile = create_fast_sample(source=sourcefile, samplefile=samplefile, start_time=1500, num_frames=150)
+clip = core.lsmas.LWLibavSource(source=sourcefile, format="YUV420P10", threads=2)
 
 # 2 . Trim
 start_frame = globals().get('start_frame')
