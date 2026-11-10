@@ -1,0 +1,10 @@
+E:/HOME/GitHub/berk/VapourSynthWorkflow/rips/dune1part2_2024/samples/encoded_video_part0.hevc
+E:/HOME/GitHub/berk/VapourSynthWorkflow/rips/dune1part2_2024/samples/encoded_video_part1.hevc
+E:/HOME/GitHub/berk/VapourSynthWorkflow/rips/dune1part2_2024/samples/encoded_video_part2.hevc
+E:/HOME/GitHub/berk/VapourSynthWorkflow/rips/dune1part2_2024/samples/encoded_video_part3.hevc
+E:/HOME/GitHub/berk/VapourSynthWorkflow/rips/dune1part2_2024/samples/encoded_video_part4.hevc
+E:/HOME/GitHub/berk/VapourSynthWorkflow/rips/dune1part2_2024/samples/encoded_video_part5.hevc
+E:/HOME/GitHub/berk/VapourSynthWorkflow/rips/dune1part2_2024/samples/encoded_video_part6.hevc
+E:/HOME/GitHub/berk/VapourSynthWorkflow/rips/dune1part2_2024/samples/encoded_video_part7.hevc
+E:/HOME/GitHub/berk/VapourSynthWorkflow/rips/dune1part2_2024/samples/encoded_video_part8.hevc
+E:/HOME/GitHub/berk/VapourSynthWorkflow/rips/dune1part2_2024/samples/encoded_video_part9.hevc

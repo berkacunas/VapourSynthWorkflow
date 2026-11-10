@@ -54,9 +54,9 @@ def parse_crop_values(ffmpeg_output: str) -> tuple[int, int, int, int]:
     
     return w, h, x, y
 
-def ffmpeg_stderr(source: str) -> str:
+def ffmpeg_cropdetect(source: str, start_time: str = "00:00:00.000", frames: int = 100) -> str:
     
-    cmd = ["ffmpeg", "-hide_banner", "-ss", "00:20:00", "-i", source, "-vf", "cropdetect", "-an", "-sn", "-frames:v", "100", "-f", "null", "-"]
+    cmd = ["ffmpeg", "-hide_banner", "-ss", start_time, "-i", source, "-vf", "cropdetect", "-an", "-sn", "-frames:v", str(frames), "-f", "null", "-"]
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     return result.stderr

@@ -9,13 +9,13 @@ import threading
 import winsound
 from typing import Tuple, Dict, List, Any
 
-from vapoursynth_workflow.video_utilities import parse_crop_values, ffmpeg_stderr
+from vapoursynth_workflow.video_utilities import parse_crop_values, ffmpeg_cropdetect
 
 def process_audio(sourcefile: Path, qaac_path: Path, output_file: Path):
     
     print("\n[1/3] Extracting audio and encoding with AAC...")
 
-    audio_cmd = f'eac3to "{sourcefile}" 2: stdout.wav -down6 | "{qaac_path}" --tvbr 127 - -o "{output_file}"'
+    audio_cmd = f'eac3to "{sourcefile}" 2: stdout.wav -down6 | "{qaac_path}" --tvbr 100 - -o "{output_file}"'
     subprocess.run(audio_cmd, shell=True, check=True)
     print(f"Audio encoding complete: {output_file}")
 
@@ -63,7 +63,7 @@ def get_resolution(video_info: Dict[str, Any]) -> Tuple[int, int]:
 
 def get_cropping_values(sourcefile: Path) -> Tuple[int, int, int, int]:
 
-    w, h, x, y = parse_crop_values(ffmpeg_stderr(sourcefile.as_posix()))
+    w, h, x, y = parse_crop_values(ffmpeg_cropdetect(sourcefile.as_posix()))
     return w, h, x, y
 
 def convert_cropping_values(w, h, x, y, source_width, source_height):
@@ -75,7 +75,6 @@ def convert_cropping_values(w, h, x, y, source_width, source_height):
     
     return left, top, right, bottom
     
-
 def process_video_with_nvencc(nvencc_path: Path, vapoursynth_file: Path, sourcefile: Path, output_file: Path, target_width: int = 1920, target_height: int = 1080, left: int = 0, top: int = 0, right: int = 0, bottom: int = 0, start_frame: int = 0, end_frame: int = 0) -> bool:
     
     print("\n[2/3] NVEncC hardware encoding via VapourSynth is starting...")
@@ -242,8 +241,8 @@ def hardware_monitor(p_vspipe: subprocess.Popen, p_nvencc: subprocess.Popen, sto
 def main():
     
     root_dir = Path("./rips/dune1part2_2024").resolve()
-    sourcefile = Path(r"D:\BT\Completed\Dune.Part.Two.2024.UHD.BluRay.2160p.TrueHD.Atmos.7.1.DV.HEVC.REMUX-FraMeSToR.mkv")
-    samplefile = Path(r"E:\HOME\GitHub\berk\VapourSynthWorkflow\rips\dune1part2_2024\samples\sample_file.mkv")
+    # sourcefile = Path(r"D:\BT\Completed\Dune.Part.Two.2024.UHD.BluRay.2160p.TrueHD.Atmos.7.1.DV.HEVC.REMUX-FraMeSToR.mkv")
+    sourcefile = Path(r"E:\HOME\GitHub\berk\VapourSynthWorkflow\rips\dune1part2_2024\samples\sample_file.mkv")
     
     vapoursynth_file = root_dir / "vapoursynth.vpy"
     nvencc_path = Path(r"E:\HOME\Documents\Encoding\SOFTWARE\NVEncC\NVEncC_9.12_x64\NVEncC64.exe")
@@ -256,6 +255,14 @@ def main():
 
     output_file.parent.mkdir(parents=True, exist_ok=True)
     
+    
+    
+    state_file = Path("completed_parts.txt")
+    completed_parts = []
+    if state_file.exists():
+        with open(state_file, "r") as f:
+            completed_parts = [line.strip() for line in f]
+            
     # TEST
     # sourcefile = samplefile
     
@@ -275,23 +282,32 @@ def main():
     encoding_parts = 10
     
     if encoding_parts > 0:
+        
         part_names = []
         frames_per_loop = total_frames // encoding_parts
         
-        success = False
+        success = True
         for i, start_frame in enumerate(range(0, total_frames, frames_per_loop)):
             part_file = root_dir / f"samples/encoded_video_part{i}.hevc"
+            part_names.append(part_file)
+            if part_file.as_posix() in completed_parts:
+                print(f"[INFO] {part_file} already encoded, skipping next...")
+                continue
+            
             end_frame = start_frame + frames_per_loop - 1 
             success = process_video_with_nvencc(nvencc_path, vapoursynth_file, sourcefile, part_file, target_width, target_height, left, top, right, bottom, start_frame, end_frame)
-            if not success:
+            if success:
+                with open(state_file, "a") as f:
+                    f.write(f"{part_file.as_posix()}\n")
+            else:
                 break
-            part_names.append(part_file)
     else:
         success = process_video_with_nvencc(nvencc_path, vapoursynth_file, sourcefile, output_file, target_width, target_height, left, top, right, bottom)
     
     if success:
         if encoding_parts > 0:
             merge_parts(output_file, part_names)
+            
         process_audio(sourcefile, qaac_path, encoded_audio_file)
         merge(output_file, encoded_audio_file, final_muxed_file)
     else:
