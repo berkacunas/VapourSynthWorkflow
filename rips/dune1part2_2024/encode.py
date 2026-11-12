@@ -19,7 +19,6 @@ def process_audio(sourcefile: Path, qaac_path: Path, output_file: Path):
     subprocess.run(audio_cmd, shell=True, check=True)
     print(f"Audio encoding complete: {output_file}")
 
-
 def probe_file(sourcefile: Path) -> Dict[str, Any]:
     
     probe_cmd = ["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height,nb_frames,tags", "-of", "json", sourcefile]
@@ -241,8 +240,8 @@ def hardware_monitor(p_vspipe: subprocess.Popen, p_nvencc: subprocess.Popen, sto
 def main():
     
     root_dir = Path("./rips/dune1part2_2024").resolve()
-    # sourcefile = Path(r"D:\BT\Completed\Dune.Part.Two.2024.UHD.BluRay.2160p.TrueHD.Atmos.7.1.DV.HEVC.REMUX-FraMeSToR.mkv")
-    sourcefile = Path(r"E:\HOME\GitHub\berk\VapourSynthWorkflow\rips\dune1part2_2024\samples\sample_file.mkv")
+    sourcefile = Path(r"D:\BT\Completed\Dune.Part.Two.2024.UHD.BluRay.2160p.TrueHD.Atmos.7.1.DV.HEVC.REMUX-FraMeSToR.mkv")
+    # sourcefile = Path(r"E:\HOME\GitHub\berk\VapourSynthWorkflow\rips\dune1part2_2024\samples\sample_file.mkv")
     
     vapoursynth_file = root_dir / "vapoursynth.vpy"
     nvencc_path = Path(r"E:\HOME\Documents\Encoding\SOFTWARE\NVEncC\NVEncC_9.12_x64\NVEncC64.exe")
