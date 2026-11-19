@@ -14,5 +14,6 @@ dependencies = [
   "vsrepo",
   "vsutil",
   "psutil",
+  "numpy",
 ]
 requires-python = ">=3.10"

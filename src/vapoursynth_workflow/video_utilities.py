@@ -15,19 +15,33 @@ def get_fps(source: str) -> float:
     
     return fps
 
-def create_fast_sample(source: str, samplefile: str, start_time: str | int = "00:20:00", duration: str | None = None, num_frames: int | None = None) -> str:
+def create_fast_sample(source: str, samplefile: str, start_time: str | int = "00:20:00", duration: str | None = None, num_frames: int | None = None, 
+                       has_audio: bool = True, has_subtitles: bool = True) -> str:
     
     samplefile_path = Path(samplefile)
     sample_dir = samplefile_path.resolve().parent
-    
-    # if not samplefile_path.exists():
     sample_dir.mkdir(parents=True, exist_ok=True)
 
+    cmd = ["ffmpeg", "-y", "-ss", str(start_time), "-i", source]
     if num_frames is not None:
-        cmd = ["ffmpeg", "-y", "-ss", str(start_time), "-i", source, "-frames:v", str(num_frames), "-c:v", "copy", "-sn", samplefile]
-    else:
+        cmd.extend(["-frames:v", str(num_frames)])
+    elif duration:
         duration_val = duration if duration else "00:00:10"
-        cmd = ["ffmpeg", "-y", "-ss", str(start_time), "-i", source, "-t", duration_val, "-c:v", "copy", "-sn", samplefile]
+        cmd.extend(["-t", duration_val])
+        
+    cmd.extend(["-c:v", "copy"])
+    
+    if has_audio:
+        cmd.extend(["-c:a", "copy"])
+    else:
+        cmd.extend(["-an"])
+        
+    if has_subtitles:
+        cmd.extend(["-c:s", "copy"])
+    else:
+        cmd.extend(["-sn"])
+        
+    cmd.extend([samplefile])
         
     subprocess.run(cmd, check=True)
     
@@ -54,7 +68,7 @@ def parse_crop_values(ffmpeg_output: str) -> tuple[int, int, int, int]:
     
     return w, h, x, y
 
-def ffmpeg_cropdetect(source: str, start_time: str = "00:00:00.000", frames: int = 100) -> str:
+def ffmpeg_cropdetect(source: str, start_time: str, frames: int) -> str:
     
     cmd = ["ffmpeg", "-hide_banner", "-ss", start_time, "-i", source, "-vf", "cropdetect", "-an", "-sn", "-frames:v", str(frames), "-f", "null", "-"]
     result = subprocess.run(cmd, capture_output=True, text=True)
@@ -80,7 +94,6 @@ def iterate_frames(vnode: vs.VideoNode):
     this function uses storing frames.
     '''
     yield from vnode.frames(prefetch=1, backlog=1)
-
 
 def save_crop_as_image(cropped_clip: vs.VideoNode, frame_index: int, output_path: str):
 
